@@ -5,7 +5,7 @@ import { AnimationMixer, MathUtils, type PerspectiveCamera } from "three";
 import { STAGE } from "./carModel";
 
 const TURN_DEGREES = 350;
-const TURN_SPEED = 1.5;
+const TURN_SPEED = 1.8;
 const DOOR_CLIP = "model_open_all";
 
 /** Aims the camera at the car's centre and widens the shot on narrow stages so the car always fits. */
