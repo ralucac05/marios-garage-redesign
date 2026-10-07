@@ -1,20 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ArrowRight } from "lucide-react";
 import {
   business,
   routineServices,
   routineServicesFooter,
   specialistServices,
-  trustPoints,
+  customerReviews,
 } from "@/features/business/data";
 import { BrandStrip } from "@/features/brands/BrandStrip";
 import { CinematicHero } from "@/features/hero/CinematicHero";
+import { CAR_POSTER } from "@/features/hero/carModel";
 import { PhotoGallery } from "@/features/gallery/PhotoGallery";
-import { RatingSummary } from "@/features/reviews/RatingSummary";
-import { ReviewCards } from "@/features/reviews/ReviewCards";
+import { RatingSummary, ReviewGrid, ReviewQuote } from "@/features/reviews/Reviews";
 import { ContactDetails, OpeningHoursTable } from "@/features/contact/ContactDetails";
-import { ServiceGrid } from "@/features/services/ServiceGrid";
+import { ServiceList } from "@/features/services/ServiceList";
+import { VisitSteps } from "@/features/services/VisitSteps";
 import { Section, SectionHeading } from "@/shared/ui/Section";
-import { Card, CardBody, CardTitle } from "@/shared/ui/Card";
+import { ButtonRouterLink } from "@/shared/ui/Button";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,83 +24,108 @@ export const Route = createFileRoute("/")({
       { title: "Marios Garage — Car Service & Engine Repair in Paphos" },
       {
         name: "description",
-        content:
-          "Marios Garage in Paphos: oil changes, brakes, filters and complex engine diagnostics for Mercedes, BMW, Honda and more. Call +357 96 344401.",
+        content: `Marios Garage in Paphos: servicing, brakes, A/C, electrical work and engine diagnostics for ${business.makes}. Call ${business.phoneDisplay}.`,
       },
       { property: "og:title", content: "Marios Garage — Car Service & Engine Repair in Paphos" },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { property: "og:image", content: CAR_POSTER.src },
+      { name: "twitter:card", content: "summary_large_image" },
       {
         property: "og:description",
-        content:
-          "Routine maintenance and difficult engine repairs, handled properly. Rated 4.3 on Google. Call +357 96 344401.",
+        content: `Routine maintenance and difficult engine repairs, handled properly. Rated 4.3 on Google. Call ${business.phoneDisplay}.`,
+      },
+    ],
+    links: [
+      // The still of the car is the hero's largest image: fetch it early.
+      {
+        rel: "preload",
+        as: "image",
+        href: CAR_POSTER.src,
+        imageSrcSet: CAR_POSTER.srcSet,
+        imageSizes: "(min-width: 1024px) 62vw, 100vw",
+        fetchPriority: "high",
       },
     ],
   }),
   component: HomePage,
 });
 
+const featured = customerReviews[0];
+
 function HomePage() {
   return (
     <>
       <CinematicHero />
 
-      <Section id="services">
+      <Section id="services" labelledBy="services-title">
         <SectionHeading
-          eyebrow="Routine maintenance"
-          title="The everyday work, done properly"
-          intro="Servicing that keeps a car healthy between the big jobs — booked in quickly and finished the same day wherever possible."
+          id="services-title"
+          title="Servicing, diagnostics and repair"
+          intro="The everyday maintenance that keeps a car healthy, and the difficult faults that need someone to follow the evidence instead of replacing parts and hoping."
+          aside={
+            <ButtonRouterLink to="/services" variant="quiet">
+              All services
+              <ArrowRight aria-hidden="true" />
+            </ButtonRouterLink>
+          }
         />
-        <ServiceGrid services={routineServices} />
-        <p className="mt-8 font-display text-sm uppercase tracking-[0.3em] text-silver-dim">
-          {routineServicesFooter}
-        </p>
+        <div className="mt-14 grid gap-14 lg:grid-cols-2 lg:gap-16">
+          <ServiceList
+            title="Routine maintenance"
+            services={routineServices}
+            note={routineServicesFooter}
+          />
+          <ServiceList title="Diagnostics and repair" services={specialistServices} />
+        </div>
       </Section>
 
-      <Section className="bg-surface/30">
+      <Section tone="paper" labelledBy="visit-title">
         <SectionHeading
-          eyebrow="Difficult jobs"
-          title="Engine diagnostics and complex repairs"
-          intro="When a fault is hard to pin down, the car needs a mechanic who will follow the evidence instead of replacing parts and hoping."
+          id="visit-title"
+          title="How a visit works"
+          intro="You talk to the person who will work on the car, and nothing is done without your say-so."
         />
-        <ServiceGrid services={specialistServices} columns={3} />
+        <VisitSteps />
       </Section>
 
-      <Section>
+      <Section labelledBy="reviews-title">
+        <h2 id="reviews-title" className="sr-only">
+          What customers say
+        </h2>
+        <div className="grid gap-14 lg:grid-cols-12 lg:gap-10">
+          <RatingSummary className="lg:col-span-4" />
+          {featured ? (
+            <div className="lg:col-span-8">
+              <ReviewQuote review={featured} featured />
+            </div>
+          ) : null}
+        </div>
+        <ReviewGrid ids={["german-car-repair", "mercedes-knocking-noise"]} className="mt-20" />
+        <ButtonRouterLink to="/reviews" variant="quiet" className="mt-12">
+          More reviews
+          <ArrowRight aria-hidden="true" />
+        </ButtonRouterLink>
+      </Section>
+
+      <Section tone="paper" labelledBy="makes-title">
         <SectionHeading
-          eyebrow="Expertise"
-          title="Mercedes, BMW, Honda and more"
+          id="makes-title"
+          title="Specialists in German and Japanese cars"
           intro="Years of hands-on work across German and Japanese makes, from routine servicing to engine-deep repairs."
         />
         <BrandStrip />
       </Section>
 
-      <Section className="bg-surface/30">
-        <SectionHeading eyebrow="Inside the garage" title="Where the work happens" />
+      <Section labelledBy="workshop-title">
+        <SectionHeading id="workshop-title" title="Inside the workshop" />
         <PhotoGallery />
       </Section>
 
-      <Section>
-        <SectionHeading eyebrow="Reputation" title="What customers say" />
-        <RatingSummary />
-        <ReviewCards limit={2} />
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
-          {trustPoints.map((point) => (
-            <Card key={point.title} className="h-full">
-              <CardTitle>{point.title}</CardTitle>
-              <CardBody>{point.body}</CardBody>
-            </Card>
-          ))}
-        </div>
-      </Section>
-
-      <Section className="bg-surface/30">
-        <SectionHeading
-          eyebrow="Contact"
-          title="Talk to Marios"
-          intro={`Call the garage directly on ${business.phoneDisplay}, or drop in during opening hours.`}
-        />
-        <div className="mt-12 grid gap-5 md:grid-cols-2">
+      <Section tone="ink" id="visit" labelledBy="contact-title">
+        <h2 id="contact-title" className="type-h2 max-w-2xl">
+          Bring it in, or call first
+        </h2>
+        <div className="mt-12 grid gap-14 lg:grid-cols-2 lg:gap-20">
           <ContactDetails />
           <OpeningHoursTable />
         </div>

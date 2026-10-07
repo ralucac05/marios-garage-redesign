@@ -1,23 +1,28 @@
+import type { ReactNode } from "react";
+import { Container } from "@/shared/ui/Section";
+
 export function PageHero({
-  eyebrow,
   title,
   intro,
+  children,
 }: {
-  eyebrow: string;
   title: string;
   intro: string;
+  children?: ReactNode;
 }) {
   return (
-    <section className="border-b border-border/60 px-6 pb-16 pt-36 md:pb-24 md:pt-44">
-      <div className="mx-auto w-full max-w-6xl">
-        <p className="eyebrow">{eyebrow}</p>
-        <h1 className="text-metal mt-4 max-w-3xl text-4xl font-extrabold leading-[1.02] md:text-6xl">
-          {title}
-        </h1>
-        <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
+    <section className="studio-backdrop relative overflow-hidden pt-32 pb-16 text-on-ink md:pt-40 md:pb-24">
+      <Container>
+        <h1 className="type-display hero-rise max-w-4xl">{title}</h1>
+        <p className="type-lead hero-rise mt-6 max-w-[58ch] text-on-ink-dim [animation-delay:80ms]">
           {intro}
         </p>
-      </div>
+        {children ? (
+          <div className="hero-rise mt-9 flex flex-wrap gap-3 [animation-delay:160ms]">
+            {children}
+          </div>
+        ) : null}
+      </Container>
     </section>
   );
 }

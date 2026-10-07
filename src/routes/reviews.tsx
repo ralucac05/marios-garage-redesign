@@ -1,11 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { reviewSummary, trustPoints } from "@/features/business/data";
+import { reviewSummary } from "@/features/business/data";
 import { CallButton } from "@/features/contact/ContactDetails";
 import { PageHero } from "@/features/layout/PageHero";
-import { RatingSummary } from "@/features/reviews/RatingSummary";
-import { ReviewCards } from "@/features/reviews/ReviewCards";
-import { Card, CardBody, CardTitle } from "@/shared/ui/Card";
-import { Section, SectionHeading } from "@/shared/ui/Section";
+import { RatingSummary, ReviewGrid } from "@/features/reviews/Reviews";
+import { Section } from "@/shared/ui/Section";
 
 export const Route = createFileRoute("/reviews")({
   head: () => ({
@@ -31,31 +29,30 @@ function ReviewsPage() {
   return (
     <>
       <PageHero
-        eyebrow="Reviews"
         title={`Rated ${reviewSummary.rating} on Google`}
-        intro={`${reviewSummary.count} customers have rated Marios Garage on its Google listing. Read a selection of their experiences below.`}
+        intro={`${reviewSummary.count} customers have rated Marios Garage on its Google listing. A selection of their reviews is below, exactly as written.`}
       />
 
-      <Section>
-        <RatingSummary />
-        <ReviewCards />
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
-          {trustPoints.map((point) => (
-            <Card key={point.title} className="h-full">
-              <CardTitle>{point.title}</CardTitle>
-              <CardBody>{point.body}</CardBody>
-            </Card>
-          ))}
+      <Section labelledBy="reviews-title">
+        <h2 id="reviews-title" className="sr-only">
+          Customer reviews
+        </h2>
+        <div className="grid gap-14 lg:grid-cols-12 lg:gap-10">
+          <div className="lg:col-span-4">
+            <RatingSummary className="lg:sticky lg:top-28" />
+          </div>
+          <ReviewGrid className="lg:col-span-8 md:grid-cols-1 lg:grid-cols-1" />
         </div>
       </Section>
 
-      <Section className="bg-surface/30">
-        <SectionHeading
-          eyebrow="Next step"
-          title="Bring your car in"
-          intro="Call the garage and describe the problem — you'll get an honest view of what it needs."
-        />
-        <div className="mt-10">
+      <Section tone="ink" labelledBy="cta-title">
+        <h2 id="cta-title" className="type-h2 max-w-2xl">
+          Bring your car in
+        </h2>
+        <p className="type-lead mt-5 max-w-[56ch] text-on-ink-dim">
+          Call the garage and describe the problem. You'll get an honest view of what it needs.
+        </p>
+        <div className="mt-9">
           <CallButton />
         </div>
       </Section>

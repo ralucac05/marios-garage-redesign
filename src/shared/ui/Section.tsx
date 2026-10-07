@@ -1,45 +1,76 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
+type Tone = "concrete" | "paper" | "ink";
+
+const tones: Record<Tone, string> = {
+  concrete: "bg-concrete text-graphite",
+  paper: "bg-paper text-graphite",
+  ink: "surface-ink",
+};
+
+export function Container({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={cn("mx-auto w-full max-w-[76rem] px-5 sm:px-8", className)}>{children}</div>
+  );
+}
+
 export function Section({
   children,
   className,
   id,
+  tone = "concrete",
+  labelledBy,
 }: {
   children: ReactNode;
   className?: string;
   id?: string;
+  tone?: Tone;
+  labelledBy?: string;
 }) {
   return (
-    <section id={id} className={cn("px-6 py-24 md:py-32", className)}>
-      <div className="mx-auto w-full max-w-6xl">{children}</div>
+    <section
+      id={id}
+      aria-labelledby={labelledBy}
+      className={cn("py-20 md:py-28", tones[tone], className)}
+    >
+      <Container>{children}</Container>
     </section>
   );
 }
 
 export function SectionHeading({
-  eyebrow,
+  id,
   title,
   intro,
-  align = "left",
+  aside,
+  tone = "light",
 }: {
-  eyebrow?: string;
+  id?: string;
   title: string;
   intro?: string;
-  align?: "left" | "center";
+  /** Optional element aligned to the right of the heading on wide screens, e.g. a link. */
+  aside?: ReactNode;
+  tone?: "light" | "dark";
 }) {
   return (
-    <header
-      className={cn(
-        "max-w-2xl",
-        align === "center" && "mx-auto text-center",
-      )}
-    >
-      {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
-      <h2 className="mt-4 text-3xl font-bold leading-tight md:text-5xl">{title}</h2>
-      {intro ? (
-        <p className="mt-5 text-base leading-relaxed text-muted-foreground md:text-lg">{intro}</p>
-      ) : null}
+    <header className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+      <div className="max-w-2xl">
+        <h2 id={id} className="type-h2">
+          {title}
+        </h2>
+        {intro ? (
+          <p
+            className={cn(
+              "type-lead mt-5 max-w-[60ch]",
+              tone === "dark" ? "text-on-ink-dim" : "text-steel",
+            )}
+          >
+            {intro}
+          </p>
+        ) : null}
+      </div>
+      {aside ? <div className="shrink-0">{aside}</div> : null}
     </header>
   );
 }

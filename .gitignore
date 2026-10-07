@@ -31,6 +31,10 @@ dist-ssr
 *.sln
 *.sw?
 
-public/mercedes_e_class_w212.glb
-public/mercedes_e_class_w212_backup.glb
-public/mercedes_e_class_w212_optimized.glb
+# Keep the 83 MB source model out of public/ (it would be deployed). Only the
+# optimised public/models/mercedes-e-class.glb is served.
+*.source.glb
+public/mercedes_e_class_w212*.glb
+node_modules/
+dist/
+.env

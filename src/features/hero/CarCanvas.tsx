@@ -1,101 +1,133 @@
-import { useEffect, useMemo, useState } from "react";
-import { Canvas } from "@react-three/fiber";
-import { ContactShadows, Environment, useGLTF } from "@react-three/drei";
-import { AnimationMixer, MathUtils } from "three";
+import { useEffect, useLayoutEffect, useMemo } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
+import { Environment, Lightformer, useGLTF } from "@react-three/drei";
+import { AnimationMixer, MathUtils, type PerspectiveCamera } from "three";
+import { STAGE } from "./carModel";
 
 const TURN_DEGREES = 350;
-const ANIMATION_SPEED = 1.5;
+const TURN_SPEED = 1.5;
+const DOOR_CLIP = "model_open_all";
 
-function Mercedes({ progress, isMobile }: { progress: number; isMobile: boolean }) {
-  const { scene, animations } = useGLTF("/mercedes_e_class_w212_webp.glb");
+/** Aims the camera at the car's centre and widens the shot on narrow stages so the car always fits. */
+function StageCamera() {
+  const camera = useThree((s) => s.camera) as PerspectiveCamera;
+  const size = useThree((s) => s.size);
+  const invalidate = useThree((s) => s.invalidate);
 
-  const doors = animations.find((clip) => clip.name === "model_open_all");
+  useLayoutEffect(() => {
+    camera.lookAt(...STAGE.target);
+    const aspect = size.width / Math.max(1, size.height);
+    camera.zoom = Math.min(1, aspect / STAGE.aspect);
+    camera.updateProjectionMatrix();
+    invalidate();
+  }, [camera, size, invalidate]);
 
+  return null;
+}
+
+function Mercedes({
+  url,
+  progress,
+  onReady,
+}: {
+  url: string;
+  progress: number;
+  onReady: () => void;
+}) {
+  const { scene, animations } = useGLTF(url);
+  const invalidate = useThree((s) => s.invalidate);
+  const doors = animations.find((clip) => clip.name === DOOR_CLIP);
   const mixer = useMemo(() => new AnimationMixer(scene), [scene]);
 
   useEffect(() => {
     if (!doors) return;
-
     const action = mixer.clipAction(doors);
     action.play();
-
     return () => {
       action.stop();
       mixer.stopAllAction();
     };
   }, [doors, mixer]);
 
-  // Scrub the opening portion of the animation directly from scroll position.
+  // Scrub the door clip directly from scroll position: reversible, no independent playback.
   useEffect(() => {
     if (!doors) return;
+    const opening = Math.min(1, progress * 3);
+    mixer.setTime(opening === 0 ? 0 : 2 + opening * 1.8);
+    invalidate();
+  }, [doors, mixer, progress, invalidate]);
 
-    const animationProgress = Math.min(1, progress * 3);
-
-    mixer.setTime(animationProgress === 0 ? 0 : 2 + animationProgress * 1.8);
-  }, [doors, mixer, progress]);
+  // Tell the page once the first frame with the model has been drawn.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => requestAnimationFrame(onReady));
+    return () => cancelAnimationFrame(id);
+  }, [onReady]);
 
   return (
     <group
-      scale={isMobile ? 1.9 : 2.0}
-      rotation-y={MathUtils.degToRad(-Math.min(1, progress * ANIMATION_SPEED) * TURN_DEGREES)}
+      scale={2}
+      rotation-y={MathUtils.degToRad(-Math.min(1, progress * TURN_SPEED) * TURN_DEGREES)}
     >
       <primitive object={scene} />
     </group>
   );
 }
 
-export default function CarCanvas({ progress }: { progress: number }) {
-  const [isMobile, setIsMobile] = useState(false);
+/**
+ * Studio lighting built from light panels rendered into the environment map.
+ * Nothing is fetched from a CDN, so the scene appears as soon as the model is parsed.
+ */
+function Studio() {
+  return (
+    <Environment resolution={256} frames={1}>
+      <color attach="background" args={["#1b2a40"]} />
+      <Lightformer
+        intensity={2.2}
+        position={[0, 7, 0]}
+        rotation-x={Math.PI / 2}
+        scale={[14, 4, 1]}
+      />
+      <Lightformer
+        intensity={1.6}
+        position={[7, 2.2, 0]}
+        rotation-y={-Math.PI / 2}
+        scale={[14, 1.4, 1]}
+      />
+      <Lightformer
+        intensity={0.6}
+        position={[-7, 2.2, 0]}
+        rotation-y={Math.PI / 2}
+        scale={[14, 1.4, 1]}
+      />
+      <Lightformer intensity={1} position={[0, 3, 9]} rotation-y={Math.PI} scale={[8, 3, 1]} />
+      <Lightformer intensity={1} position={[0, 3, -9]} scale={[8, 3, 1]} />
+    </Environment>
+  );
+}
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-
-    window.addEventListener("resize", checkMobile);
-
-    return () => {
-      window.removeEventListener("resize", checkMobile);
-    };
-  }, []);
-
+export default function CarCanvas({
+  url,
+  progress,
+  onReady,
+}: {
+  url: string;
+  progress: number;
+  onReady: () => void;
+}) {
   return (
     <Canvas
-      camera={{
-        position: isMobile ? [11.5, 3.2, 0] : [9, 3.2, 0],
-        fov: isMobile ? 45 : 38,
-        near: 0.1,
-        far: 100,
-      }}
-      gl={{
-        antialias: true,
-        alpha: true,
-        powerPreference: "high-performance",
-      }}
-      dpr={isMobile ? [1, 1] : [1, 1.5]}
+      camera={{ position: STAGE.camera, fov: STAGE.fov, near: 0.5, far: 60 }}
+      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      dpr={[1, 1.75]}
       frameloop="demand"
       style={{ background: "transparent" }}
     >
-      <ambientLight intensity={1.5} />
-
-      <directionalLight position={[4, 8, 5]} intensity={3} />
-
-      <directionalLight position={[-5, 5, -4]} intensity={2} />
-
-      <Environment preset="city" environmentIntensity={0.8} />
-
-      <Mercedes progress={progress} isMobile={isMobile} />
-
-      <ContactShadows
-        position={[0, -0.03, 0]}
-        opacity={0.32}
-        scale={7}
-        blur={2.4}
-        far={3}
-        frames={1}
-      />
+      <StageCamera />
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[4, 8, 5]} intensity={2.2} />
+      <directionalLight position={[-5, 5, -4]} intensity={1} />
+      <Studio />
+      <Mercedes url={url} progress={progress} onReady={onReady} />
     </Canvas>
   );
 }

@@ -2,23 +2,30 @@ import { Link } from "@tanstack/react-router";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-type Variant = "primary" | "outline" | "ghost";
+/**
+ * primary  – safety yellow, the one action that matters on a screen (calling the garage)
+ * light    – solid paper button for dark surfaces
+ * outline  – secondary action on dark surfaces
+ * ink      – solid navy for light surfaces
+ * quiet    – bordered secondary action on light surfaces
+ */
+type Variant = "primary" | "light" | "outline" | "ink" | "quiet";
 type Size = "md" | "lg";
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-md font-display font-semibold tracking-wide uppercase transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50";
+  "inline-flex shrink-0 items-center justify-center gap-2.5 rounded-md font-sans font-semibold whitespace-nowrap transition-colors duration-200 disabled:opacity-50 [&_svg]:size-[1.15em] [&_svg]:shrink-0";
 
 const variants: Record<Variant, string> = {
-  primary:
-    "bg-primary text-primary-foreground hover:brightness-110 hover:-translate-y-0.5 shadow-[var(--shadow-ember)]",
-  outline:
-    "border border-border bg-transparent text-silver hover:border-silver hover:bg-secondary/60 hover:-translate-y-0.5",
-  ghost: "text-silver-dim hover:text-foreground",
+  primary: "bg-signal text-ink-deep hover:bg-signal-strong",
+  light: "bg-paper text-graphite hover:bg-white",
+  outline: "border border-on-ink/30 text-on-ink hover:border-on-ink/70 hover:bg-white/5",
+  ink: "bg-ink text-on-ink hover:bg-ink-raised",
+  quiet: "border border-graphite/25 text-graphite hover:border-graphite/60 hover:bg-white/60",
 };
 
 const sizes: Record<Size, string> = {
-  md: "h-11 px-5 text-xs",
-  lg: "h-14 px-8 text-sm",
+  md: "h-11 px-4 text-[0.95rem]",
+  lg: "h-13 px-6 text-base",
 };
 
 export function buttonClasses(variant: Variant = "primary", size: Size = "md", className?: string) {
@@ -28,7 +35,7 @@ export function buttonClasses(variant: Variant = "primary", size: Size = "md", c
 interface CommonProps {
   variant?: Variant;
   size?: Size;
-  className?: string;
+  className?: string | undefined;
   children: ReactNode;
 }
 
