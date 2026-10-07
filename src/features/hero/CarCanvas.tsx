@@ -1,11 +1,13 @@
-import { useEffect, useLayoutEffect, useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Environment, Lightformer, useGLTF } from "@react-three/drei";
 import { AnimationMixer, MathUtils, type PerspectiveCamera } from "three";
 import { STAGE } from "./carModel";
 
 const TURN_DEGREES = 350;
-const TURN_SPEED = 1.8;
+const TURN_SPEED = 1.5;
+const TURN_SPEED_MOBILE = 3;
+const MOBILE_QUERY = "(max-width: 767px)";
 const DOOR_CLIP = "model_open_all";
 
 /** Aims the camera at the car's centre and widens the shot on narrow stages so the car always fits. */
@@ -25,19 +27,21 @@ function StageCamera() {
   return null;
 }
 
-function Mercedes({
-  url,
-  progress,
-  onReady,
-}: {
-  url: string;
-  progress: number;
-  onReady: () => void;
-}) {
+function Mercedes({ url, progress, onReady }: { url: string; progress: number; onReady: () => void }) {
   const { scene, animations } = useGLTF(url);
   const invalidate = useThree((s) => s.invalidate);
   const doors = animations.find((clip) => clip.name === DOOR_CLIP);
   const mixer = useMemo(() => new AnimationMixer(scene), [scene]);
+  const [turnSpeed, setTurnSpeed] = useState(TURN_SPEED);
+
+  // Phones turn the car faster; tablets and desktop keep the original speed.
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const update = () => setTurnSpeed(mq.matches ? TURN_SPEED_MOBILE : TURN_SPEED);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     if (!doors) return;
@@ -64,10 +68,7 @@ function Mercedes({
   }, [onReady]);
 
   return (
-    <group
-      scale={2}
-      rotation-y={MathUtils.degToRad(-Math.min(1, progress * TURN_SPEED) * TURN_DEGREES)}
-    >
+    <group scale={2} rotation-y={MathUtils.degToRad(-Math.min(1, progress * turnSpeed) * TURN_DEGREES)}>
       <primitive object={scene} />
     </group>
   );
@@ -81,24 +82,9 @@ function Studio() {
   return (
     <Environment resolution={256} frames={1}>
       <color attach="background" args={["#1b2a40"]} />
-      <Lightformer
-        intensity={2.2}
-        position={[0, 7, 0]}
-        rotation-x={Math.PI / 2}
-        scale={[14, 4, 1]}
-      />
-      <Lightformer
-        intensity={1.6}
-        position={[7, 2.2, 0]}
-        rotation-y={-Math.PI / 2}
-        scale={[14, 1.4, 1]}
-      />
-      <Lightformer
-        intensity={0.6}
-        position={[-7, 2.2, 0]}
-        rotation-y={Math.PI / 2}
-        scale={[14, 1.4, 1]}
-      />
+      <Lightformer intensity={2.2} position={[0, 7, 0]} rotation-x={Math.PI / 2} scale={[14, 4, 1]} />
+      <Lightformer intensity={1.6} position={[7, 2.2, 0]} rotation-y={-Math.PI / 2} scale={[14, 1.4, 1]} />
+      <Lightformer intensity={0.6} position={[-7, 2.2, 0]} rotation-y={Math.PI / 2} scale={[14, 1.4, 1]} />
       <Lightformer intensity={1} position={[0, 3, 9]} rotation-y={Math.PI} scale={[8, 3, 1]} />
       <Lightformer intensity={1} position={[0, 3, -9]} scale={[8, 3, 1]} />
     </Environment>
