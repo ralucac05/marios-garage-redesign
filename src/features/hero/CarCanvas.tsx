@@ -32,16 +32,18 @@ function Mercedes({ url, progress, onReady }: { url: string; progress: number; o
   const invalidate = useThree((s) => s.invalidate);
   const doors = animations.find((clip) => clip.name === DOOR_CLIP);
   const mixer = useMemo(() => new AnimationMixer(scene), [scene]);
-  const [turnSpeed, setTurnSpeed] = useState(TURN_SPEED);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Phones turn the car faster; tablets and desktop keep the original speed.
+  // Phones get their own turn and door speeds; tablets and desktop keep the originals.
   useEffect(() => {
     const mq = window.matchMedia(MOBILE_QUERY);
-    const update = () => setTurnSpeed(mq.matches ? TURN_SPEED_MOBILE : TURN_SPEED);
+    const update = () => setIsMobile(mq.matches);
     update();
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
   }, []);
+
+  const turnSpeed = isMobile ? TURN_SPEED_MOBILE : TURN_SPEED;
 
   useEffect(() => {
     if (!doors) return;
@@ -56,10 +58,16 @@ function Mercedes({ url, progress, onReady }: { url: string; progress: number; o
   // Scrub the door clip directly from scroll position: reversible, no independent playback.
   useEffect(() => {
     if (!doors) return;
-    const opening = Math.min(1, progress * 3);
-    mixer.setTime(opening === 0 ? 0 : 2 + opening * 1.8);
+    if (isMobile) {
+      // Phones: open doors, hood and boot across the whole turn, fully open when the car stops.
+      const opening = Math.min(1, progress * turnSpeed);
+      mixer.setTime(opening === 0 ? 0 : 2 + opening * 2.8);
+    } else {
+      const opening = Math.min(1, progress * 3);
+      mixer.setTime(opening === 0 ? 0 : 2 + opening * 1.8);
+    }
     invalidate();
-  }, [doors, mixer, progress, invalidate]);
+  }, [doors, mixer, progress, invalidate, isMobile, turnSpeed]);
 
   // Tell the page once the first frame with the model has been drawn.
   useEffect(() => {
